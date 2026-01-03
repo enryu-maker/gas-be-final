@@ -5,7 +5,7 @@ services:
     build: .
     container_name: gas-be-app
     ports:
-      - "8080:8080"
+      - "8080:8000"
     volumes:
       - ./gas.db:/app/gas.db
       # Uncomment the line below if you have Firebase credentials
