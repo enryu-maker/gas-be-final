@@ -1,5 +1,5 @@
 from app.database import Base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, UniqueConstraint, Float
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -22,6 +22,12 @@ class Room(Base):
         uselist=False,
         cascade="all, delete"
     )
+    gas_logs = relationship(
+        "RoomGasHourlyLog",
+        back_populates="room",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class RoomSafetyStatus(Base):
@@ -40,3 +46,38 @@ class RoomSafetyStatus(Base):
                      unique=True, nullable=False)
 
     room = relationship("Room", back_populates="safety_status")
+
+
+class RoomGasHourlyLog(Base):
+    __tablename__ = "room_gas_hourly_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    gas_level = Column(
+        Float,
+        nullable=False,
+        comment="Gas concentration in PPM"
+    )
+
+    recorded_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.datetime.utcnow()
+        .replace(minute=0, second=0, microsecond=0)
+    )
+
+    room_id = Column(
+        Integer,
+        ForeignKey("rooms.id"),
+        nullable=False
+    )
+
+    room = relationship("Room", back_populates="gas_logs")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "room_id",
+            "recorded_at",
+            name="uq_room_hourly_gas"
+        ),
+    )
