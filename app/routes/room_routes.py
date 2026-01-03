@@ -192,33 +192,28 @@ def toggle_valve(room_id: int, db: db_dependency):
 # 🔓 OPEN API – GAS LEVEL INGEST (NO AUTH)
 # =========================
 
-@router.post("/{room_id}/gas-level", status_code=201)
+@router.post("/{room_id}/gas-level", status_code=status.HTTP_201_CREATED)
 def submit_gas_level(
     db: db_dependency,
     room_id: int,
-    gas_level: float = Form(...),
+    gas_level: float = Query(..., description="Gas level in PPM"),
 ):
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    current_hour = datetime.utcnow().replace(
-        minute=0, second=0, microsecond=0
+    # ⏱ Exact timestamp (append-only)
+    now = datetime.utcnow()
+
+    # ✅ ALWAYS INSERT
+    log = RoomGasHourlyLog(
+        room_id=room_id,
+        gas_level=gas_level,
+        recorded_at=now,
     )
+    db.add(log)
 
-    existing = db.query(RoomGasHourlyLog).filter(
-        RoomGasHourlyLog.room_id == room_id,
-        RoomGasHourlyLog.recorded_at == current_hour,
-    ).first()
-
-    if not existing:
-        log = RoomGasHourlyLog(
-            room_id=room_id,
-            gas_level=gas_level,
-            recorded_at=current_hour,
-        )
-        db.add(log)
-
+    # Safety status init
     if not room.safety_status:
         room.safety_status = RoomSafetyStatus(
             fire_detected=False,
@@ -227,7 +222,7 @@ def submit_gas_level(
         )
         db.add(room.safety_status)
 
-    # Threshold logic (example)
+    # 🚨 Threshold Logic
     if gas_level > 300:
         room.safety_status.gas_detected = True
         room.safety_status.valve_on = False
@@ -245,7 +240,7 @@ def submit_gas_level(
     return {
         "room_id": room_id,
         "gas_level": gas_level,
-        "recorded_at": current_hour,
+        "recorded_at": now,
     }
 
 
