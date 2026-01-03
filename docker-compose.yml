@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: gas-be-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./gas.db:/app/gas.db
+      # Uncomment the line below if you have Firebase credentials
+      # - ./app/firebase/firebase-admin.json:/app/app/firebase/firebase-admin.json:ro
+    environment:
+      - SQL_DATABASE_URL=sqlite:///./gas.db
+      # Uncomment below to use PostgreSQL instead of SQLite
+      # - PSQL_DATABASE_URL=postgresql://postgres:postgres@db:5432/smartcng
+    # Uncomment depends_on if you want to use PostgreSQL
+    # depends_on:
+    #   - db
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+
