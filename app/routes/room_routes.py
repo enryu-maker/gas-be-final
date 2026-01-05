@@ -188,6 +188,16 @@ def toggle_valve(room_id: int, db: db_dependency):
     return {"valve_on": status.valve_on}
 
 
+@router.get("/{room_id}/valve-status")
+def status_valve(room_id: int, db: db_dependency):
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room or not room.safety_status:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    status = room.safety_status
+    return status.valve_on
+
+
 # =========================
 # 🔓 OPEN API – GAS LEVEL INGEST (NO AUTH)
 # =========================
