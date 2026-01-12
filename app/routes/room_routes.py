@@ -119,6 +119,7 @@ def get_room_status(room_id: int, db: db_dependency):
 @router.patch("/{room_id}/toggle-fire")
 def toggle_fire(room_id: int, db: db_dependency):
     room = db.query(Room).filter(Room.id == room_id).first()
+
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
